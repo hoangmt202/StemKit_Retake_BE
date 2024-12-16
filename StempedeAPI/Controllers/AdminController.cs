@@ -28,6 +28,7 @@ namespace StempedeAPI.Controllers
         /// <response code="200">Returns the list of users.</response>
         /// <response code="500">If an internal server error occurs.</response>
         [HttpGet("get-all-user")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<IEnumerable<ReadUserDto>>>> GetAllUsers()
         {
             try

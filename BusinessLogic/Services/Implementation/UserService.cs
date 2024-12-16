@@ -155,16 +155,8 @@ namespace BusinessLogic.Services.Implementation
             userRepository.Update(user);
             await _unitOfWork.CompleteAsync();
 
-            // Revoke all refresh tokens for this user
-            var refreshTokenRepository = _unitOfWork.GetRepository<RefreshToken>();
-            var refreshTokens = await refreshTokenRepository.FindAsync(rt => rt.UserId == userId && rt.Revoked == null);
+      
 
-            foreach (var token in refreshTokens)
-            {
-                token.Revoked = DateTime.UtcNow;
-                token.RevokedByIp = "System"; // Or your system's IP
-                refreshTokenRepository.Update(token);
-            }
 
             await _unitOfWork.CompleteAsync();
 

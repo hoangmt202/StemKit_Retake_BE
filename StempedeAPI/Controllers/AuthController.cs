@@ -11,11 +11,10 @@ namespace StempedeAPI.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
-        private readonly IExternalAuthService _externalAuthService;
+      
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger, IExternalAuthService externalAuthService)
+        public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
-            _externalAuthService = externalAuthService;
             _authService = authService;
             _logger = logger;
         }
@@ -82,8 +81,7 @@ namespace StempedeAPI.Controllers
             var loginResponse = new LoginResponseDto
             {
                 Success = true,
-                Token = result.Token,
-                RefreshToken = result.RefreshToken,
+              
                 Message = "Login successful.",
                 Roles = result.Roles,
             };
@@ -95,28 +93,8 @@ namespace StempedeAPI.Controllers
                 Message = loginResponse.Message
             });
         }
-
-        [HttpGet("login-google")]
-        public async Task<IActionResult> LoginWithGoogle([FromBody] ExternalAuthDto externalAuth)
-        {
-            var ipAddress = GetClientIpAddress();
-
-            if (string.IsNullOrEmpty(externalAuth.IdToken))
-            {
-                return BadRequest(new ApiResponse<string> { Success = false, Message = "ID token is required." });
-            }
-
-            var authResponse = await _externalAuthService.GoogleLoginAsync(externalAuth.IdToken, ipAddress);
-
-            if (!authResponse.Success)
-            {
-                return BadRequest(authResponse);
-            }
-
-            return Ok(authResponse);
-        }
-
-        [HttpPost("logout")]
+       
+       /* [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshRequestDto logoutRequest)
         {
             var ipAddress = GetClientIpAddress();
@@ -130,7 +108,7 @@ namespace StempedeAPI.Controllers
                 });
             }
 
-            var result = await _authService.LogoutAsync(logoutRequest.RefreshToken, ipAddress);
+            var result = await _authService.LogoutAsync( ipAddress);
 
             if (!result.Success)
             {
@@ -146,40 +124,8 @@ namespace StempedeAPI.Controllers
                 Success = true,
                 Message = result.Message
             });
-        }
+        }*/
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto refreshRequest)
-        {
-            var ipAddress = GetClientIpAddress();
-
-            if (refreshRequest == null || string.IsNullOrEmpty(refreshRequest.RefreshToken))
-            {
-                return BadRequest(new ApiResponse<string>
-                {
-                    Success = true,
-                    Message = "Invalid refresh token."
-                });
-            }
-
-            var result = await _authService.RefreshTokenAsync(refreshRequest.RefreshToken, ipAddress);
-
-            if (!result.Success)
-            {
-                return BadRequest(new ApiResponse<string>
-                {
-                    Success = true,
-                    Message = result.Message
-                });
-            }
-
-            return Ok(new
-            {
-                accessToken = result.Token,
-                refreshToken = result.RefreshToken,
-                message = result.Message
-            });
-        }
 
         private string GetClientIpAddress()
         {

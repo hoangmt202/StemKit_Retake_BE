@@ -12,5 +12,8 @@ namespace BusinessLogic.DTOs.Lab
 
         [MaxLength(255)]
         public string? LabFileUrl { get; set; }
+
+        [MaxLength(255)]
+        public string? VideoURL { get; set; }
     }
 }

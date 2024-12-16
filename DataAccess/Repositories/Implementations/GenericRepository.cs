@@ -1,4 +1,5 @@
-﻿using DataAccess.Repositories.Interfaces;
+﻿using DataAccess.Entities;
+using DataAccess.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -14,6 +15,8 @@ namespace DataAccess.Repositories.Implementations
             _context = context;
             _dbSet = context.Set<T>();
         }
+
+     
 
         public virtual IQueryable<T> GetAllQueryable(string includeProperties = "")
         {

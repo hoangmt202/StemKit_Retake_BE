@@ -31,5 +31,8 @@ namespace BusinessLogic.DTOs.Product
 
         [Required]
         public int SubcategoryId { get; set; }
+
+        [Required]
+        public string imagePath { get; set; }
     }
 }

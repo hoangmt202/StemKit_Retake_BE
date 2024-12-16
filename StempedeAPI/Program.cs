@@ -231,7 +231,6 @@
 //}
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
@@ -240,8 +239,6 @@ using DataAccess;
 using DataAccess.Repositories.Interfaces;
 using DataAccess.Repositories.Implementations;
 using DataAccess.Data;
-using BusinessLogic.Auth.Helpers.Implementation;
-using BusinessLogic.Auth.Helpers.Interfaces;
 using BusinessLogic.Auth.Services.Implementation;
 using BusinessLogic.Auth.Services.Interfaces;
 using BusinessLogic.Services.Implementation;
@@ -251,6 +248,7 @@ using BusinessLogic.Utils.Interfaces;
 using BusinessLogic.Configurations;
 using BusinessLogic.Configurations.MappingProfiles;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using DataAccess.Entities;
 
 namespace StempedeAPI
 {
@@ -284,29 +282,7 @@ namespace StempedeAPI
 );
             builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-            // JWT Authentication
-            var jwtSecretKey = builder.Configuration["Authentication:Jwt:Secret"];
-            if (string.IsNullOrEmpty(jwtSecretKey))
-                throw new InvalidOperationException("JWT Secret Key is not configured.");
-
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecretKey)),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    RequireExpirationTime = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-            });
+        
 
             // Register Repositories and Services
             RegisterRepositories(builder.Services);
@@ -367,25 +343,17 @@ namespace StempedeAPI
         private static void RegisterRepositories(IServiceCollection services)
         {
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
 
         private static void RegisterServices(IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IJwtTokenService, JwtTokenService>();
-            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-            services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
-            services.AddScoped<IExternalAuthService, ExternalAuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ILabService, LabService>();
-            services.AddScoped<ISubcategoryService, SubcategoryService>();
-            services.AddScoped<ICartService, CartService>();
-            services.AddScoped<IUserPermissionService, UserPermissionService>();
-            services.AddScoped<IAssignMissingPermissions, AssignMissingPermissions>();
+            services.AddScoped<ISubcategoryService, SubcategoryService>();         
             services.AddScoped<IOrderService, OrderService>();
         }
 

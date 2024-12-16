@@ -1,4 +1,5 @@
-﻿using DataAccess.Repositories.Implementations;
+﻿using DataAccess.Entities;
+using DataAccess.Repositories.Implementations;
 using DataAccess.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -9,14 +10,14 @@ namespace DataAccess.Data
         private readonly AppDbContext _context;
 
         private readonly Dictionary<Type, object> _repositories;
-        public IRefreshTokenRepository RefreshTokens { get; private set; }
+     
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             _repositories = new Dictionary<Type, object>();
 
-            RefreshTokens = new RefreshTokenRepository(_context);
+           
         }
 
         public IGenericRepository<T> GetRepository<T>() where T : class

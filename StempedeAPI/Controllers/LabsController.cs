@@ -9,7 +9,7 @@ namespace StempedeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] 
+    [AllowAnonymous] 
     public class LabsController : ControllerBase
     {
         private readonly ILabService _labService;
@@ -161,7 +161,6 @@ namespace StempedeAPI.Controllers
         /// <param name="updateLabDto">Updated lab details.</param>
         /// <returns>No content.</returns>
         [HttpPut("update/{id}")]
-        [Authorize(Roles = "Manager,Staff")]
         public async Task<ActionResult<ApiResponse<string>>> UpdateLab(int id, [FromBody] UpdateLabDto updateLabDto)
         {
             if (!ModelState.IsValid)
@@ -204,7 +203,6 @@ namespace StempedeAPI.Controllers
         /// <param name="id">Lab ID.</param>
         /// <returns>No content.</returns>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<string>>> DeleteLab(int id)
         {
             try

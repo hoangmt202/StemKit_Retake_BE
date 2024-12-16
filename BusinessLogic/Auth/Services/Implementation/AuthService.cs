@@ -5,7 +5,6 @@ using BusinessLogic.DTOs.Auth;
 using AutoMapper;
 using BusinessLogic.Configurations;
 using Microsoft.Extensions.Options;
-using BusinessLogic.Auth.Helpers.Interfaces;
 using System.Data;
 using DataAccess.Data;
 using DataAccess.Entities;
@@ -17,28 +16,20 @@ namespace BusinessLogic.Auth.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseSettings _dbSettings;
-        private readonly IRefreshTokenService _refreshTokenService;
-        private readonly IJwtTokenService _jwtTokenService;
         private readonly ILogger<AuthService> _logger;
         private readonly IMapper _mapper;
-        private readonly IAssignMissingPermissions _assignMissingPermissions;
+      
 
         public AuthService(
             IUnitOfWork unitOfWork,
-            IRefreshTokenService refreshTokenService,
-            IJwtTokenService jwtTokenService,
             ILogger<AuthService> logger,
             IMapper mapper,
-            IOptions<DatabaseSettings> dbSettings,
-            IAssignMissingPermissions assignMissingPermissions)
+            IOptions<DatabaseSettings> dbSettings)
         {
-            _unitOfWork = unitOfWork;
-            _refreshTokenService = refreshTokenService;
-            _jwtTokenService = jwtTokenService;
+            _unitOfWork = unitOfWork;         
             _logger = logger;
             _mapper = mapper;
             _dbSettings = dbSettings.Value;
-            _assignMissingPermissions = assignMissingPermissions;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(UserRegistrationDto registrationDto, string ipAddress)
@@ -94,8 +85,7 @@ namespace BusinessLogic.Auth.Services.Implementation
                     
                     user.Password = BCrypt.Net.BCrypt.HashPassword(registrationDto.Password, workFactor: 12);
                     user.Status = true;
-                    user.IsExternal = registrationDto.IsExternal;
-                    user.ExternalProvider = registrationDto.IsExternal ? registrationDto.ExternalProvider : null;
+                  
 
                     await _unitOfWork.GetRepository<User>().AddAsync(user);
                     await _unitOfWork.CompleteAsync();
@@ -110,45 +100,6 @@ namespace BusinessLogic.Auth.Services.Implementation
 
                     // Save role assignment
                     await _unitOfWork.CompleteAsync();
-
-                    // Retrieve the corresponding permission
-                    var permission = await _unitOfWork.GetRepository<Permission>().GetAsync(p => EF.Functions.Collate(p.PermissionName, _dbSettings.Collation) == registrationDto.Role);
-
-                    if (permission == null)
-                    {
-                        _logger.LogError("Permission matching the role '{RoleName}' not found.", registrationDto.Role);
-                        throw new InvalidOperationException("Corresponding permission not found.");
-                    }
-
-                    var existingUserPermission = await _unitOfWork.GetRepository<UserPermission>().FindAsync(up => up.UserId == user.UserId && up.PermissionId == permission.PermissionId);
-
-                    if (existingUserPermission.Any())
-                    {
-                        _logger.LogWarning("User already has the '{PermissionName}' permission.", permission.PermissionName);
-                    }
-                    else
-                    {
-                        // Proceed to assign the permission
-                        var userPermission = new UserPermission
-                        {
-                            UserId = user.UserId,
-                            PermissionId = permission.PermissionId,
-                            AssignedBy = user.UserId
-                        };
-
-                        await _unitOfWork.GetRepository<UserPermission>().AddAsync(userPermission);
-                        await _unitOfWork.CompleteAsync();
-                    }
-
-                    // Generate JWT Access Token
-                    var accessToken = _jwtTokenService.GenerateJwtToken(user.UserId, user.Username, new List<string> { role.RoleName }, user.Status);
-
-                    // Generate Refresh Token
-                    var refreshToken = _refreshTokenService.GenerateRefreshToken(user.UserId, ipAddress);
-
-                    // Save the Refresh Token
-                    await _refreshTokenService.SaveRefreshTokenAsync(refreshToken);
-
                     // Commit transaction
                     await _unitOfWork.CompleteAsync();
 
@@ -159,8 +110,7 @@ namespace BusinessLogic.Auth.Services.Implementation
                     {
                         Success = true,
                         Message = "Registration successful.",
-                        Token = accessToken,
-                        RefreshToken = refreshToken.Token
+                       
                     };
                 }
                 catch (SqlException ex)
@@ -214,26 +164,14 @@ namespace BusinessLogic.Auth.Services.Implementation
                     .FindAsync(ur => ur.UserId == user.UserId, includeProperties: "Role");
 
                 var roleNames = userRoles.Select(ur => ur.Role.RoleName).ToList();
+           
 
-                // Assign missing permissions based on roles using helper
-                await _assignMissingPermissions.AssignMissingPermissionsAsync(user.UserId, roleNames);
-
-                // Generate JWT token
-                var accessToken = _jwtTokenService.GenerateJwtToken(user.UserId, user.Username, roleNames, user.Status);
-
-                // Generate Refresh Token
-                var refreshToken = _refreshTokenService.GenerateRefreshToken(user.UserId, ipAddress);
-
-                // Save the Refresh Token
-                await _refreshTokenService.SaveRefreshTokenAsync(refreshToken);
 
                 _logger.LogInformation("User login successful for UserId: {UserId}", user.UserId);
 
                 return new LoginResponseDto
                 {
-                    Success = true,
-                    Token = accessToken,
-                    RefreshToken = refreshToken.Token,
+                    Success = true,              
                     Message = "Login successful.",
                     Roles = roleNames
                 };
@@ -250,46 +188,16 @@ namespace BusinessLogic.Auth.Services.Implementation
             }
         }
 
-        public async Task<AuthResponseDto> LogoutAsync(string refreshToken, string ipAddress)
+        public async Task<AuthResponseDto> LogoutAsync(string ipAddress)
         {
             _logger.LogInformation("Logout attempt from IP: {IpAddress}", ipAddress);
 
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                _logger.LogWarning("Refresh token is null or empty during logout.");
-                return new AuthResponseDto { Success = false, Message = "Invalid refresh token." };
-            }
-
-            var existingRefreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken);
-
-            if (existingRefreshToken == null)
-            {
-                _logger.LogWarning("Refresh token not found during logout: {Token}", refreshToken);
-                return new AuthResponseDto { Success = false, Message = "Invalid refresh token." };
-            }
-
-            // Remove the Refresh Token via RefreshTokenService
-            await _refreshTokenService.InvalidateRefreshTokenAsync(refreshToken, ipAddress);
-
-            _logger.LogInformation("User logged out successfully for UserId: {UserId}", existingRefreshToken.UserId);
+           
 
             return new AuthResponseDto { Success = true, Message = "Logout successful." };
         }
 
-        public async Task<AuthResponseDto> RefreshTokenAsync(string token, string ipAddress)
-        {
-            _logger.LogInformation("Refresh token attempt from IP: {IpAddress}", ipAddress);
-
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                _logger.LogWarning("Refresh token is null or empty.");
-                return new AuthResponseDto { Success = false, Message = "Invalid refresh token." };
-            }
-
-            var refreshResponse = await _refreshTokenService.RefreshTokensAsync(token, ipAddress);
-
-            return refreshResponse;
-        }
+      
     }
 }
 

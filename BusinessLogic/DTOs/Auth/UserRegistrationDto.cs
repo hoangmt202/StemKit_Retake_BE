@@ -27,7 +27,6 @@ namespace BusinessLogic.DTOs.Auth
         [Required]
         public string Role { get; set; } = "Customer";
 
-        public bool IsExternal { get; set; } = false;
-        public string? ExternalProvider { get; set; }
+        
     }
 }

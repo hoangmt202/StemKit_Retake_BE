@@ -99,19 +99,8 @@ namespace BusinessLogic.Services.Implementation
             {
                 _logger.LogInformation("Updating delivery status for Order ID: {OrderId}, Delivery ID: {DeliveryId}", orderId, deliveryId);
 
-                var deliveryRepository = _unitOfWork.GetRepository<Delivery>();
-                var delivery = await deliveryRepository.GetAsync(d => d.DeliveryId == deliveryId && d.OrderId == orderId);
 
-                if (delivery == null)
-                {
-                    _logger.LogWarning("Delivery with ID: {DeliveryId} for Order ID: {OrderId} not found.", deliveryId, orderId);
-                    return ApiResponse<string>.FailureResponse("Delivery not found.", new List<string> { "The specified delivery does not exist." });
-                }
-
-                delivery.DeliveryStatus = updateDto.DeliveryStatus;
-                delivery.DeliveryDate = updateDto.DeliveryDate;
-
-                deliveryRepository.Update(delivery);
+              
                 await _unitOfWork.CompleteAsync();
 
                 _logger.LogInformation("Delivery status updated successfully for Delivery ID: {DeliveryId}", deliveryId);

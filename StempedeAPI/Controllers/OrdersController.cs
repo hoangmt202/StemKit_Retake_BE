@@ -9,7 +9,7 @@ namespace StempedeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [AllowAnonymous]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -30,7 +30,6 @@ namespace StempedeAPI.Controllers
         /// <response code="400">Bad request due to invalid parameters.</response>
         /// <response code="500">Internal server error.</response>
         [HttpGet]
-        [Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<PaginatedList<OrderDto>>>> GetAllOrders([FromQuery] QueryParameters queryParameters)
         {
             if (!ModelState.IsValid)
@@ -70,7 +69,6 @@ namespace StempedeAPI.Controllers
         /// <response code="404">Order not found.</response>
         /// <response code="500">Internal server error.</response>
         [HttpGet("{id}")]
-        [Authorize(Roles = "Manager,Staff,Customer")]
         public async Task<ActionResult<ApiResponse<OrderDto>>> GetOrderById(int id)
         {
             var userName = User.Identity.Name;
@@ -114,7 +112,6 @@ namespace StempedeAPI.Controllers
         /// <response code="404">Delivery not found.</response>
         /// <response code="500">Internal server error.</response>
         [HttpPut("{orderId}/deliveries/{deliveryId}")]
-        [Authorize(Roles = "Staff")]
         public async Task<ActionResult<ApiResponse<string>>> UpdateDeliveryStatus(int orderId, int deliveryId, [FromBody] UpdateDeliveryStatusDto updateDto)
         {
             if (!ModelState.IsValid)

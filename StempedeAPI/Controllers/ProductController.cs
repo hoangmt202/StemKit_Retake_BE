@@ -4,12 +4,14 @@ using BusinessLogic.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogic.Utils.Implementation;
+using BusinessLogic.DTOs.Lab;
+using BusinessLogic.Services.Implementation;
 
 namespace StempedeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [AllowAnonymous]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
@@ -22,7 +24,19 @@ namespace StempedeAPI.Controllers
             _productService = productService;
             _logger = logger;
         }
+        [HttpGet("get-all")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<IEnumerable<ReadProductDto>>>> GetAllProducts()
+        {
+            var products = await _productService.GetAllProductsAsync();
 
+            return Ok(new ApiResponse<IEnumerable<ReadProductDto>>
+            {
+                Success = true,
+                Data = products,
+                Message = "Labs retrieved successfully."
+            });
+        }
         /// <summary>
         /// Retrieves a paginated list of products.
         /// </summary>

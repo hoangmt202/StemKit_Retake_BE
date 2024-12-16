@@ -1,4 +1,6 @@
-﻿namespace BusinessLogic.DTOs.Lab
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BusinessLogic.DTOs.Lab
 {
     public class ReadLabSimpleDto
     {
@@ -6,5 +8,6 @@
         public string LabName { get; set; }
         public string? Description { get; set; }
         public string? LabFileUrl { get; set; }
+        public string? VideoURL { get; set; }
     }
 }

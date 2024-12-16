@@ -23,5 +23,7 @@
         public int SubcategoryId { get; set; }
 
         public string SubcategoryName { get; set; } = null!;
+
+        public string? ImagePath { get; set; }
     }
 }
