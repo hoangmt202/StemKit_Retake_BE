@@ -30,9 +30,9 @@ namespace BusinessLogic.Services.Implementation
                 _logger.LogInformation("Fetching all orders without pagination");
 
                 var orders = await _unitOfWork.GetRepository<Order>()
-                                            .GetAllQueryable(includeProperties: "User,OrderDetails.Product")  
-                                            .OrderBy(o => o.OrderId)
-                                            .ToListAsync();
+                    .GetAllQueryable(includeProperties: "User,OrderDetails.Product")
+                    .OrderBy(o => o.OrderId)
+                    .ToListAsync();
 
                 var orderDtos = _mapper.Map<List<OrderDto>>(orders);
 
@@ -41,7 +41,8 @@ namespace BusinessLogic.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching all orders");
-                return ApiResponse<List<OrderDto>>.FailureResponse("Failed to retrieve orders.", new List<string> { ex.Message });
+                return ApiResponse<List<OrderDto>>.FailureResponse("Failed to retrieve orders.",
+                    new List<string> { ex.Message });
             }
         }
         public async Task<ApiResponse<PaginatedList<OrderDto>>> GetAllOrdersAsync(QueryParameters queryParameters)
@@ -78,13 +79,14 @@ namespace BusinessLogic.Services.Implementation
                 _logger.LogInformation("Fetching order with ID: {OrderId}", orderId);
 
                 var order = await _unitOfWork.GetRepository<Order>()
-                                             .GetAllQueryable(includeProperties: "User,Deliveries,OrderDetails.Product")
-                                             .FirstOrDefaultAsync(o => o.OrderId == orderId);
+                    .GetAllQueryable(includeProperties: "User,OrderDetails.Product")
+                    .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
                 if (order == null)
                 {
                     _logger.LogWarning("Order with ID: {OrderId} not found.", orderId);
-                    return ApiResponse<OrderDto>.FailureResponse("Order not found.", new List<string> { "The specified order does not exist." });
+                    return ApiResponse<OrderDto>.FailureResponse("Order not found.",
+                        new List<string> { "The specified order does not exist." });
                 }
 
                 // If the user is a Customer, ensure they own the order
@@ -103,7 +105,8 @@ namespace BusinessLogic.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching order with ID: {OrderId}", orderId);
-                return ApiResponse<OrderDto>.FailureResponse("Failed to retrieve the order.", new List<string> { ex.Message });
+                return ApiResponse<OrderDto>.FailureResponse("Failed to retrieve the order.",
+                    new List<string> { ex.Message });
             }
         }
 
@@ -133,6 +136,6 @@ namespace BusinessLogic.Services.Implementation
             }
         }
 
-     
+        
     }
 }

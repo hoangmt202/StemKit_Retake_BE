@@ -42,8 +42,30 @@ namespace BusinessLogic.Configurations.MappingProfiles
 
             // Subcategory mappings
             CreateMap<Subcategory, ReadSubcategoryDto>();
+            // Order -> OrderDto
+            CreateMap<Order, OrderDto>()
+                .ForMember(dest => dest.CustomerUsername,
+                    opt => opt.MapFrom(src => src.User.Username))
+                .ForMember(dest => dest.OrderDate,
+                    opt => opt.MapFrom(src => src.OrderDate))
+                .ForMember(dest => dest.TotalAmount,
+                    opt => opt.MapFrom(src => src.TotalAmount))
+                .ForMember(dest => dest.DeliveryStatus,
+                    opt => opt.MapFrom(src => src.DeliveryStatus))
+                .ForMember(dest => dest.SupportStatus,
+                    opt => opt.MapFrom(src => src.SupportStatus))
+                .ForMember(dest => dest.OrderDetails,
+                    opt => opt.MapFrom(src => src.OrderDetails));
 
-           
+            // OrderDetail -> OrderDetailDto
+            CreateMap<OrderDetail, OrderDetailDto>()
+                .ForMember(dest => dest.ProductName,
+                    opt => opt.MapFrom(src => src.Product.ProductName))
+                .ForMember(dest => dest.ProductDescription,
+                    opt => opt.MapFrom(src => src.ProductDescription))
+                .ForMember(dest => dest.Price,
+                    opt => opt.MapFrom(src => src.Price ?? 0m));
+
         }
     }
 }
