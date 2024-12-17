@@ -67,6 +67,10 @@ namespace StempedeAPI
             }
 
             app.UseHttpsRedirection();
+          
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseRouting();
             app.UseCors("AllowReactApp");
             app.UseEndpoints(endpoints => endpoints.MapControllers());

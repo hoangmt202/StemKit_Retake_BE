@@ -7,9 +7,9 @@ using BusinessLogic.Utils.Implementation;
 
 namespace StempedeAPI.Controllers
 {
+  
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Ensure only Managers can access these endpoints
     public class AdminController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -21,20 +21,12 @@ namespace StempedeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Retrieves a list of all users with non-sensitive information.
-        /// </summary>
-        /// <returns>An ApiResponse containing the list of users.</returns>
-        /// <response code="200">Returns the list of users.</response>
-        /// <response code="500">If an internal server error occurs.</response>
         [HttpGet("get-all-user")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<IEnumerable<ReadUserDto>>>> GetAllUsers()
         {
             try
             {
                 var users = await _userService.GetAllUsersAsync();
-
                 return Ok(new ApiResponse<IEnumerable<ReadUserDto>>
                 {
                     Success = true,
@@ -115,7 +107,7 @@ namespace StempedeAPI.Controllers
         [HttpPost("{userId}/ban")]
         public async Task<IActionResult> BanUser(int userId)
         {
-            _logger.LogInformation("Manager {ManagerId} is attempting to ban UserId: {UserId}", User.Identity.Name, userId);
+            _logger.LogInformation("Attempting to ban UserId: {UserId}", userId);
 
             try
             {
@@ -163,8 +155,7 @@ namespace StempedeAPI.Controllers
         [HttpPost("{userId}/unban")]
         public async Task<IActionResult> UnbanUser(int userId)
         {
-            _logger.LogInformation("Manager {ManagerId} is attempting to unban UserId: {UserId}", User.Identity.Name, userId);
-
+            _logger.LogInformation("Attempting to unban UserId: {UserId}", userId);
             try
             {
                 var resultMessage = await _userService.UnbanUserAsync(userId);
