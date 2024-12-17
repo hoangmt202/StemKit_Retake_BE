@@ -70,30 +70,25 @@ namespace StempedeAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse<OrderDto>>> GetOrderById(int id)
+        public async Task<IActionResult> GetOrderById(int id)
         {
             try
             {
-                // Bỏ phần check role, tạm thời set mặc định là Customer
-                var response = await _orderService.GetOrderByIdAsync(id, "defaultUser", "Customer");
-                if (response.Success)
+                
+                var response = await _orderService.GetOrderByIdAsync(id, "", "");
+
+                if (!response.Success)
                 {
-                    return Ok(response);
+                    return response.Message == "Order not found" ?
+                        NotFound(response) : BadRequest(response);
                 }
-                else
-                {
-                    if (response.Message == "Order not found.")
-                        return NotFound(response);
-                    else if (response.Message == "Access denied.")
-                        return Forbid();
-                    else
-                        return BadRequest(response);
-                }
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while retrieving order with ID: {OrderId}", id);
-                return StatusCode(500, ApiResponse<OrderDto>.FailureResponse("An error occurred while retrieving the order.", new List<string> { "Internal server error." }));
+                _logger.LogError(ex, "Error getting order by ID: {Id}", id);
+                return StatusCode(500, new { message = "Internal server error" });
             }
         }
 

@@ -89,16 +89,6 @@ namespace BusinessLogic.Services.Implementation
                         new List<string> { "The specified order does not exist." });
                 }
 
-                // If the user is a Customer, ensure they own the order
-                if (userRole.Equals("Customer", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!order.User.Username.Equals(currentUsername, StringComparison.OrdinalIgnoreCase))
-                    {
-                        _logger.LogWarning("User {Username} attempted to access Order ID: {OrderId} which does not belong to them.", currentUsername, orderId);
-                        return ApiResponse<OrderDto>.FailureResponse("Access denied.", new List<string> { "You do not have permission to access this order." });
-                    }
-                }
-
                 var orderDto = _mapper.Map<OrderDto>(order);
                 return ApiResponse<OrderDto>.SuccessResponse(orderDto, "Order retrieved successfully.");
             }
