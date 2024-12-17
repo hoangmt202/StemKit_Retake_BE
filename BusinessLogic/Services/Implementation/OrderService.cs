@@ -23,7 +23,27 @@ namespace BusinessLogic.Services.Implementation
             _mapper = mapper;
             _logger = logger;
         }
+        public async Task<ApiResponse<List<OrderDto>>> GetAllOrdersNoFilterAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all orders without pagination");
 
+                var orders = await _unitOfWork.GetRepository<Order>()
+                                            .GetAllQueryable(includeProperties: "User,OrderDetails.Product")  
+                                            .OrderBy(o => o.OrderId)
+                                            .ToListAsync();
+
+                var orderDtos = _mapper.Map<List<OrderDto>>(orders);
+
+                return ApiResponse<List<OrderDto>>.SuccessResponse(orderDtos, "Orders retrieved successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching all orders");
+                return ApiResponse<List<OrderDto>>.FailureResponse("Failed to retrieve orders.", new List<string> { ex.Message });
+            }
+        }
         public async Task<ApiResponse<PaginatedList<OrderDto>>> GetAllOrdersAsync(QueryParameters queryParameters)
         {
             try
@@ -32,8 +52,8 @@ namespace BusinessLogic.Services.Implementation
                     queryParameters.PageNumber, queryParameters.PageSize);
 
                 var orderQuery = _unitOfWork.GetRepository<Order>()
-                                            .GetAllQueryable(includeProperties: "User,Deliveries,OrderDetails.Product")
-                                            .OrderBy(o => o.OrderId); // Ensure consistent ordering
+                                            .GetAllQueryable(includeProperties: "User,OrderDetails.Product")  
+                                            .OrderBy(o => o.OrderId);
 
                 var paginatedOrders = await PaginatedList<Order>.CreateAsync(orderQuery, queryParameters.PageNumber, queryParameters.PageSize);
 
@@ -113,39 +133,6 @@ namespace BusinessLogic.Services.Implementation
             }
         }
 
-        //public async Task<ApiResponse<SalesReportDto>> GetSalesReportAsync(DateOnly fromDate, DateOnly toDate)
-        //{
-        //    try
-        //    {
-        //        _logger.LogInformation("Generating sales report from {FromDate} to {ToDate}", fromDate, toDate);
-
-        //        var orders = await _unitOfWork.GetRepository<Order>()
-        //                                       .GetAllQueryable(includeProperties: "User")
-        //                                       .Where(o => o.OrderDate >= fromDate && o.OrderDate <= toDate)
-        //                                       .ToListAsync();
-
-        //        var reportDto = new SalesReportDto
-        //        {
-        //            FromDate = fromDate,
-        //            ToDate = toDate,
-        //            TotalSales = orders.Sum(o => o.TotalAmount ?? 0),
-        //            TotalOrders = orders.Count,
-        //            Details = orders.Select(o => new SalesReportDetailDto
-        //            {
-        //                OrderDate = o.OrderDate ?? DateOnly.MinValue,
-        //                OrderId = o.OrderId,
-        //                CustomerUsername = o.User.Username,
-        //                OrderTotal = o.TotalAmount ?? 0
-        //            }).ToList()
-        //        };
-
-        //        return ApiResponse<SalesReportDto>.SuccessResponse(reportDto, "Sales report generated successfully.");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error generating sales report.");
-        //        return ApiResponse<SalesReportDto>.FailureResponse("Failed to generate sales report.", new List<string> { ex.Message });
-        //    }
-        //}
+     
     }
 }

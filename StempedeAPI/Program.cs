@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using DataAccess;
 using DataAccess.Repositories.Interfaces;
@@ -40,7 +40,7 @@ namespace StempedeAPI
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DB"))
             );
 
-            // Th�m Authentication v� Authorization services
+            // Thêm Authentication và Authorization services
             builder.Services.AddAuthentication();
             builder.Services.AddAuthorization();
 
@@ -71,15 +71,15 @@ namespace StempedeAPI
 
             app.UseHttpsRedirection();
 
-            // ?�ng th? t? middleware
+            // Đúng thứ tự middleware
             app.UseCors("AllowReactApp");
 
             app.UseRouting();
 
-            app.UseAuthentication(); // Ph?i ??t tr??c UseAuthorization
-            app.UseAuthorization();  // Ph?i ??t sau UseRouting
+            app.UseAuthentication(); // Phải đặt trước UseAuthorization
+            app.UseAuthorization();  // Phải đặt sau UseRouting
 
-            app.MapControllers();    // Thay th? UseEndpoints
+            app.MapControllers();    // Thay thế UseEndpoints
         }
 
         private static void RegisterRepositories(IServiceCollection services)

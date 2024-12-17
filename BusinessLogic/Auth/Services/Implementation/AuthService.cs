@@ -190,14 +190,32 @@ namespace BusinessLogic.Auth.Services.Implementation
 
         public async Task<AuthResponseDto> LogoutAsync(string ipAddress)
         {
-            _logger.LogInformation("Logout attempt from IP: {IpAddress}", ipAddress);
+            try
+            {
+                _logger.LogInformation("Processing logout request from IP: {IpAddress}", ipAddress);
 
-           
+              
 
-            return new AuthResponseDto { Success = true, Message = "Logout successful." };
+                _logger.LogInformation("Logout successful for IP: {IpAddress}", ipAddress);
+
+                return new AuthResponseDto
+                {
+                    Success = true,
+                    Message = "Logout successful."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during logout for IP: {IpAddress}", ipAddress);
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "An error occurred during logout. Please try again."
+                };
+            }
         }
 
-      
+
     }
 }
 

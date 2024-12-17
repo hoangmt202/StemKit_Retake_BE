@@ -5,6 +5,8 @@
         public int OrderId { get; set; }
         public string CustomerUsername { get; set; }
         public DateOnly OrderDate { get; set; }
+        public string DeliveryStatus { get; set; }
+        public bool SupportStatus { get; set; }
         public decimal TotalAmount { get; set; }
     }
 }

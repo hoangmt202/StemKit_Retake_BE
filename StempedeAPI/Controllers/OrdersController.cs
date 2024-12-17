@@ -20,6 +20,26 @@ namespace StempedeAPI.Controllers
             _logger = logger;
         }
 
+        [HttpGet("all")]
+        public async Task<ActionResult<ApiResponse<List<OrderDto>>>> GetAllOrdersNoFilter()
+        {
+            try
+            {
+                var response = await _orderService.GetAllOrdersNoFilterAsync();
+                if (response.Success)
+                {
+                    return Ok(response);
+                }
+                return StatusCode(500, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while retrieving all orders");
+                return StatusCode(500, ApiResponse<List<OrderDto>>.FailureResponse(
+                    "An error occurred while retrieving orders.",
+                    new List<string> { "Internal server error." }));
+            }
+        }
         [HttpGet]
         public async Task<ActionResult<ApiResponse<PaginatedList<OrderDto>>>> GetAllOrders([FromQuery] QueryParameters queryParameters)
         {

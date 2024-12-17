@@ -93,28 +93,21 @@ namespace StempedeAPI.Controllers
                 Message = loginResponse.Message
             });
         }
-       
-       /* [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto logoutRequest)
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
             var ipAddress = GetClientIpAddress();
 
-            if (logoutRequest == null || string.IsNullOrEmpty(logoutRequest.RefreshToken))
-            {
-                return BadRequest(new ApiResponse<string>
-                {
-                    Success = true,
-                    Message = "Invalid refresh token."
-                });
-            }
+            _logger.LogInformation("Logout endpoint called from IP: {IpAddress}", ipAddress);
 
-            var result = await _authService.LogoutAsync( ipAddress);
+            var result = await _authService.LogoutAsync(ipAddress);
 
             if (!result.Success)
             {
                 return BadRequest(new ApiResponse<string>
                 {
-                    Success = true,
+                    Success = false,
                     Message = result.Message
                 });
             }
@@ -122,10 +115,9 @@ namespace StempedeAPI.Controllers
             return Ok(new ApiResponse<string>
             {
                 Success = true,
-                Message = result.Message
+                Message = "Logged out successfully"
             });
-        }*/
-
+        }
 
         private string GetClientIpAddress()
         {
