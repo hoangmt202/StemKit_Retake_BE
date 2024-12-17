@@ -65,7 +65,12 @@ namespace BusinessLogic.Configurations.MappingProfiles
                     opt => opt.MapFrom(src => src.ProductDescription))
                 .ForMember(dest => dest.Price,
                     opt => opt.MapFrom(src => src.Price ?? 0m));
+           
+            // CreateSubcategoryDto->Subcategory
+            CreateMap<Subcategory, ReadSubcategoryDto>();
 
+            CreateMap<CreateSubcategoryDto, Subcategory>()
+                .ForMember(dest => dest.Products, opt => opt.Ignore());
         }
     }
 }

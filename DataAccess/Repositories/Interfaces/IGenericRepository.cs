@@ -20,6 +20,7 @@ namespace DataAccess.Repositories.Interfaces
         Task<T> GetAsync(Expression<Func<T, bool>> predicate, string includeProperties = "");
         Task<IEnumerable<T>> GetAllAsync(string includeProperties = "");
         Task<T> GetByIdAsync(int id);
+        Task InsertAsync(T entity);
         Task AddAsync(T entity);
         Task AddRangeAsync(IEnumerable<T> entities);
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
