@@ -28,7 +28,8 @@ namespace BusinessLogic.Services.Implementation
         public async Task<IEnumerable<ReadProductDto>> GetAllProductsAsync()
         {
             var products = await _unitOfWork.GetRepository<Product>()
-                .GetAllAsync();
+        .GetAllAsync(includeProperties: "Lab,Subcategory");
+
             return _mapper.Map<IEnumerable<ReadProductDto>>(products);
         }
         public async Task<ReadProductDto?> GetProductByIdAsync(int productId)

@@ -18,9 +18,11 @@ namespace BusinessLogic.Configurations.MappingProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status ? "Active" : "Banned"))
                 .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role.RoleName).ToList()));   
             //Product mappings
-            CreateMap<Product, ReadProductDto>()
-                .ForMember(dest => dest.LabName, opt => opt.MapFrom(src => src.Lab.LabName))
-                .ForMember(dest => dest.SubcategoryName, opt => opt.MapFrom(src => src.Subcategory.SubcategoryName));
+               CreateMap<Product, ReadProductDto>()
+            .ForMember(dest => dest.LabName,
+                      opt => opt.MapFrom(src => src.Lab != null ? src.Lab.LabName : null))
+            .ForMember(dest => dest.SubcategoryName,
+                      opt => opt.MapFrom(src => src.Subcategory != null ? src.Subcategory.SubcategoryName : null));
 
             CreateMap<CreateProductDto, Product>();
             CreateMap<UpdateProductDto, Product>();
