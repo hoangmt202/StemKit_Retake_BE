@@ -40,6 +40,10 @@ namespace StempedeAPI
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DB"))
             );
 
+            // Thêm Authentication và Authorization services
+            builder.Services.AddAuthentication();
+            builder.Services.AddAuthorization();
+
             // Register Repositories and Services
             RegisterRepositories(builder.Services);
             RegisterServices(builder.Services);
@@ -52,7 +56,6 @@ namespace StempedeAPI
                 .AddJsonOptions(options =>
                     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
-            // Basic Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
         }
@@ -67,13 +70,16 @@ namespace StempedeAPI
             }
 
             app.UseHttpsRedirection();
-          
-            app.UseAuthentication();
-            app.UseAuthorization();
+
+            // ?úng th? t? middleware
+            app.UseCors("AllowReactApp");
 
             app.UseRouting();
-            app.UseCors("AllowReactApp");
-            app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+            app.UseAuthentication(); // Ph?i ??t tr??c UseAuthorization
+            app.UseAuthorization();  // Ph?i ??t sau UseRouting
+
+            app.MapControllers();    // Thay th? UseEndpoints
         }
 
         private static void RegisterRepositories(IServiceCollection services)

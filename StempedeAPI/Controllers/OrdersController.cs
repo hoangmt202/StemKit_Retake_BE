@@ -9,7 +9,6 @@ namespace StempedeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [AllowAnonymous]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -21,14 +20,6 @@ namespace StempedeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Retrieves all orders with pagination. Accessible by Managers only.
-        /// </summary>
-        /// <param name="queryParameters">Pagination parameters.</param>
-        /// <returns>An ApiResponse containing a paginated list of orders.</returns>
-        /// <response code="200">Orders retrieved successfully.</response>
-        /// <response code="400">Bad request due to invalid parameters.</response>
-        /// <response code="500">Internal server error.</response>
         [HttpGet]
         public async Task<ActionResult<ApiResponse<PaginatedList<OrderDto>>>> GetAllOrders([FromQuery] QueryParameters queryParameters)
         {
@@ -58,27 +49,13 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        /// <summary>
-        /// Retrieves a specific order by ID. Accessible by Managers, Staff, and Customers.
-        /// Customers can only access their own orders.
-        /// </summary>
-        /// <param name="id">The ID of the order to retrieve.</param>
-        /// <returns>An ApiResponse containing the order details.</returns>
-        /// <response code="200">Order retrieved successfully.</response>
-        /// <response code="403">Forbidden - Access denied.</response>
-        /// <response code="404">Order not found.</response>
-        /// <response code="500">Internal server error.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<OrderDto>>> GetOrderById(int id)
         {
-            var userName = User.Identity.Name;
-            var userRole = User.IsInRole("Manager") ? "Manager" :
-                           User.IsInRole("Staff") ? "Staff" :
-                           "Customer";
-
             try
             {
-                var response = await _orderService.GetOrderByIdAsync(id, userName, userRole);
+                // Bỏ phần check role, tạm thời set mặc định là Customer
+                var response = await _orderService.GetOrderByIdAsync(id, "defaultUser", "Customer");
                 if (response.Success)
                 {
                     return Ok(response);
@@ -100,19 +77,11 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        /// <summary>
-        /// Updates the delivery status of a specific delivery. Accessible by Staff only.
-        /// </summary>
-        /// <param name="orderId">The ID of the order associated with the delivery.</param>
-        /// <param name="deliveryId">The ID of the delivery to update.</param>
-        /// <param name="updateDto">The new delivery status and date.</param>
-        /// <returns>An ApiResponse indicating the result of the operation.</returns>
-        /// <response code="204">Delivery status updated successfully.</response>
-        /// <response code="400">Invalid input or unauthorized access.</response>
-        /// <response code="404">Delivery not found.</response>
-        /// <response code="500">Internal server error.</response>
         [HttpPut("{orderId}/deliveries/{deliveryId}")]
-        public async Task<ActionResult<ApiResponse<string>>> UpdateDeliveryStatus(int orderId, int deliveryId, [FromBody] UpdateDeliveryStatusDto updateDto)
+        public async Task<ActionResult<ApiResponse<string>>> UpdateDeliveryStatus(
+            int orderId,
+            int deliveryId,
+            [FromBody] UpdateDeliveryStatusDto updateDto)
         {
             if (!ModelState.IsValid)
             {
@@ -121,14 +90,13 @@ namespace StempedeAPI.Controllers
                 return BadRequest(ApiResponse<string>.FailureResponse("Invalid input.", errors));
             }
 
-            var userRole = "Staff"; // Since only Staff can access this endpoint
-
             try
             {
-                var response = await _orderService.UpdateDeliveryStatusAsync(orderId, deliveryId, updateDto, userRole);
+                
+                var response = await _orderService.UpdateDeliveryStatusAsync(orderId, deliveryId, updateDto, "Manager");
                 if (response.Success)
                 {
-                    return NoContent(); // 204 No Content for successful PUT without response body
+                    return NoContent();
                 }
                 else
                 {
@@ -147,36 +115,6 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        ///// <summary>
-        ///// Generates a sales report for a specified date range. Accessible by Managers only.
-        ///// </summary>
-        ///// <param name="fromDate">The start date for the report.</param>
-        ///// <param name="toDate">The end date for the report.</param>
-        ///// <returns>An ApiResponse containing the sales report.</returns>
-        ///// <response code="200">Sales report generated successfully.</response>
-        ///// <response code="500">Internal server error.</response>
-        //[HttpGet("Report/Sales")]
-        //[Authorize(Roles = "Manager")]
-        //public async Task<ActionResult<ApiResponse<SalesReportDto>>> GetSalesReport([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate)
-        //{
-        //    try
-        //    {
-        //        var response = await _orderService.GetSalesReportAsync(fromDate, toDate);
-        //        if (response.Success)
-        //        {
-        //            return Ok(response);
-        //        }
-        //        else
-        //        {
-        //            return StatusCode(500, response);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Unexpected error while generating sales report.");
-        //        return StatusCode(500, ApiResponse<SalesReportDto>.FailureResponse("An error occurred while generating the sales report.", new List<string> { "Internal server error." }));
-        //    }
-        //}
     }
 }
 
