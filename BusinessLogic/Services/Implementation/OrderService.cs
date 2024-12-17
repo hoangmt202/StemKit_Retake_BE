@@ -8,6 +8,7 @@ using BusinessLogic.Utils.Implementation;
 using DataAccess.Data;
 using DataAccess.Entities;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace BusinessLogic.Services.Implementation
 {
@@ -100,32 +101,85 @@ namespace BusinessLogic.Services.Implementation
             }
         }
 
-        public async Task<ApiResponse<string>> UpdateDeliveryStatusAsync(int orderId, int deliveryId, UpdateDeliveryStatusDto updateDto, string userRole)
+        public ApiResponse<List<string>> GetAvailableDeliveryStatuses(int orderId)
         {
-            if (!userRole.Equals("Staff", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning("Unauthorized attempt to update delivery status by user role: {UserRole}", userRole);
-                return ApiResponse<string>.FailureResponse("Unauthorized access.", new List<string> { "You do not have permission to perform this action." });
-            }
-
             try
             {
-                _logger.LogInformation("Updating delivery status for Order ID: {OrderId}, Delivery ID: {DeliveryId}", orderId, deliveryId);
+                var order = _unitOfWork.GetRepository<Order>()
+                    .GetAllQueryable()
+                    .FirstOrDefault(o => o.OrderId == orderId);
 
+                if (order == null)
+                {
+                    return ApiResponse<List<string>>.FailureResponse("Order not found",
+                        new List<string> { "The specified order does not exist." });
+                }
 
-              
-                await _unitOfWork.CompleteAsync();
+                var statuses = new List<string>();
+                switch (order.DeliveryStatus)
+                {
+                    case "Đã đặt hàng":
+                        statuses.Add("Đang giao hàng");
+                        break;
+                    case "Đang giao hàng":
+                        statuses.Add("Đã giao hàng");
+                        break;
+                }
+                statuses.Add(order.DeliveryStatus); // Thêm trạng thái hiện tại
 
-                _logger.LogInformation("Delivery status updated successfully for Delivery ID: {DeliveryId}", deliveryId);
-                return ApiResponse<string>.SuccessResponse("Delivery status updated successfully.", "Delivery status updated successfully.");
+                return ApiResponse<List<string>>.SuccessResponse(statuses,
+                    "Available statuses retrieved successfully.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating delivery status for Delivery ID: {DeliveryId}", deliveryId);
-                return ApiResponse<string>.FailureResponse("Failed to update delivery status.", new List<string> { ex.Message });
+                _logger.LogError(ex, "Error getting available statuses for OrderId: {OrderId}", orderId);
+                return ApiResponse<List<string>>.FailureResponse("Failed to get available statuses",
+                    new List<string> { ex.Message });
             }
         }
 
-        
+        public async Task<ApiResponse<string>> UpdateDeliveryStatusAsync(int orderId, UpdateDeliveryStatusDto updateDto)
+        {
+            try
+            {
+                var order = await _unitOfWork.GetRepository<Order>()
+                    .GetAllQueryable()
+                    .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+                if (order == null)
+                {
+                    return ApiResponse<string>.FailureResponse("Order not found",
+                        new List<string> { "The specified order does not exist." });
+                }
+
+                if (!IsValidStatusTransition(order.DeliveryStatus, updateDto.DeliveryStatus))
+                {
+                    return ApiResponse<string>.FailureResponse("Invalid status transition",
+                        new List<string> { "Không thể chuyển sang trạng thái này." });
+                }
+
+                order.DeliveryStatus = updateDto.DeliveryStatus;
+                await _unitOfWork.CompleteAsync();
+
+                return ApiResponse<string>.SuccessResponse("Cập nhật trạng thái thành công");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating status for OrderId: {OrderId}", orderId);
+                return ApiResponse<string>.FailureResponse("Failed to update status",
+                    new List<string> { ex.Message });
+            }
+        }
+
+        private bool IsValidStatusTransition(string currentStatus, string newStatus)
+        {
+            return (currentStatus, newStatus) switch
+            {
+                ("Đã đặt hàng", "Đang giao hàng") => true,
+                ("Đang giao hàng", "Đã giao hàng") => true,
+                _ => false
+            };
+        }
+
     }
 }

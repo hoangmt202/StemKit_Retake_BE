@@ -20,7 +20,7 @@ namespace StempedeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet("all")]
+        [HttpGet("GetAll")]
         public async Task<ActionResult<ApiResponse<List<OrderDto>>>> GetAllOrdersNoFilter()
         {
             try
@@ -40,7 +40,7 @@ namespace StempedeAPI.Controllers
                     new List<string> { "Internal server error." }));
             }
         }
-        [HttpGet]
+        [HttpGet("pagintedGetAll")]
         public async Task<ActionResult<ApiResponse<PaginatedList<OrderDto>>>> GetAllOrders([FromQuery] QueryParameters queryParameters)
         {
             if (!ModelState.IsValid)
@@ -69,7 +69,7 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("GetById/{orderId}")]
         public async Task<IActionResult> GetOrderById(int id)
         {
             try
@@ -92,41 +92,46 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        [HttpPut("{orderId}/deliveries/{deliveryId}")]
+        [HttpGet("Get-delivery-statuses/{orderId}")]
+        public ActionResult<ApiResponse<List<string>>> GetAvailableDeliveryStatuses(int orderId)
+        {
+            try
+            {
+                var availableStatuses = _orderService.GetAvailableDeliveryStatuses(orderId);
+                return Ok(ApiResponse<List<string>>.SuccessResponse(availableStatuses.Data, "Available delivery statuses retrieved successfully."));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available delivery statuses for OrderId: {Id}", orderId);
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPut("{orderId}/update-delivery-status")]
         public async Task<ActionResult<ApiResponse<string>>> UpdateDeliveryStatus(
             int orderId,
-            int deliveryId,
             [FromBody] UpdateDeliveryStatusDto updateDto)
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Invalid UpdateDeliveryStatusDto received for OrderId: {OrderId}, DeliveryId: {DeliveryId}", orderId, deliveryId);
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                return BadRequest(ApiResponse<string>.FailureResponse("Invalid input.", errors));
+                return BadRequest(ApiResponse<string>.FailureResponse("Invalid input.",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
             }
 
             try
             {
-                
-                var response = await _orderService.UpdateDeliveryStatusAsync(orderId, deliveryId, updateDto, "Manager");
+                var response = await _orderService.UpdateDeliveryStatusAsync(orderId, updateDto);
                 if (response.Success)
                 {
-                    return NoContent();
+                    return Ok(response);
                 }
-                else
-                {
-                    if (response.Message == "Delivery not found.")
-                        return NotFound(response);
-                    else if (response.Message == "Unauthorized access.")
-                        return Forbid();
-                    else
-                        return BadRequest(response);
-                }
+                return BadRequest(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while updating delivery status for OrderId: {OrderId}, DeliveryId: {DeliveryId}", orderId, deliveryId);
-                return StatusCode(500, ApiResponse<string>.FailureResponse("An error occurred while updating delivery status.", new List<string> { "Internal server error." }));
+                _logger.LogError(ex, "Error updating delivery status for OrderId: {Id}", orderId);
+                return StatusCode(500, ApiResponse<string>.FailureResponse("Internal server error",
+                    new List<string> { ex.Message }));
             }
         }
 
