@@ -37,7 +37,10 @@ namespace DataAccess.Repositories.Implementations
         {
             return _dbSet.FirstOrDefault(predicate);
         }
-
+        public async Task InsertAsync(T entity) // Thêm phương thức này
+        {
+            await _dbSet.AddAsync(entity);
+        }
         public IEnumerable<T> GetAll()
         {
             return _dbSet.ToList();
