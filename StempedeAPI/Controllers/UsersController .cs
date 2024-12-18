@@ -4,42 +4,33 @@ using DataAccess.Data;
 using DataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace StempedeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]  // Only authenticated users can access these endpoints
     public class UsersController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(IUnitOfWork unitOfWork)
+        public UsersController(IUnitOfWork unitOfWork, ILogger<UsersController> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// Retrieves current users information.
-        /// </summary>
-        /// <returns>An ApiResponse to view user profile.</returns>
-        [HttpGet("profile")]
-        public async Task<IActionResult> GetUserProfile()
+        [HttpGet("profile/{username}")]
+        public async Task<IActionResult> GetUserProfile(string username)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized(new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "Invalid user ID."
-                });
-            }
-
             try
             {
-                var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(userId);
+                var user = await _unitOfWork.GetRepository<User>()
+                    .GetAllQueryable()
+                    .FirstOrDefaultAsync(u => u.Username == username);
+
                 if (user == null)
                 {
                     return NotFound(new ApiResponse<string>
@@ -69,6 +60,7 @@ namespace StempedeAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving user profile for username: {Username}", username);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<string>
                 {
                     Success = false,
@@ -77,8 +69,8 @@ namespace StempedeAPI.Controllers
             }
         }
 
-        [HttpPut("update-profile")]
-        public async Task<IActionResult> UpdateUserProfile([FromBody] UserProfileUpdateDto updateDto)
+        [HttpPut("update-profile/{username}")]
+        public async Task<IActionResult> UpdateUserProfile(string username, [FromBody] UserProfileUpdateDto updateDto)
         {
             if (updateDto == null)
             {
@@ -89,19 +81,12 @@ namespace StempedeAPI.Controllers
                 });
             }
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized(new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "Invalid user ID."
-                });
-            }
-
             try
             {
-                var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(userId);
+                var user = await _unitOfWork.GetRepository<User>()
+                    .GetAllQueryable()
+                    .FirstOrDefaultAsync(u => u.Username == username);
+
                 if (user == null)
                 {
                     return NotFound(new ApiResponse<string>
@@ -111,11 +96,20 @@ namespace StempedeAPI.Controllers
                     });
                 }
 
-                // Update fields
+                
                 user.FullName = updateDto.FullName ?? user.FullName;
-                user.Username = updateDto.Username ?? user.Username;
                 user.Phone = updateDto.Phone ?? user.Phone;
                 user.Address = updateDto.Address ?? user.Address;
+
+          
+                if (updateDto.Username != null && updateDto.Username != user.Username)
+                {
+                    return BadRequest(new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "Username cannot be changed."
+                    });
+                }
 
                 _unitOfWork.GetRepository<User>().Update(user);
                 await _unitOfWork.CompleteAsync();
@@ -140,12 +134,14 @@ namespace StempedeAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating user profile for username: {Username}", username);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<string>
                 {
                     Success = false,
-                    Message = "An error occurred while updating the profile. Please try again later."
+                    Message = "An error occurred while updating the profile."
                 });
             }
         }
     }
+
 }

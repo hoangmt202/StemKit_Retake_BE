@@ -22,14 +22,9 @@ namespace StempedeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Retrieves all subcategories.
-        /// </summary>
-        /// <returns>List of subcategories.</returns>
-        /// <response code="200">Returns the list of subcategories.</response>
-        /// <response code="500">If an internal server error occurs.</response>
+    
         [HttpGet("get-all")]
-        [AllowAnonymous] // Allows unauthenticated access if desired; remove if not
+        [AllowAnonymous] 
         public async Task<ActionResult<ApiResponse<IEnumerable<ReadSubcategoryDto>>>> GetAllSubcategories()
         {
             try
