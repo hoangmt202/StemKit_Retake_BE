@@ -71,15 +71,14 @@ namespace StempedeAPI
 
             app.UseHttpsRedirection();
 
-            // Đúng thứ tự middleware
             app.UseCors("AllowReactApp");
 
             app.UseRouting();
 
-            app.UseAuthentication(); // Phải đặt trước UseAuthorization
-            app.UseAuthorization();  // Phải đặt sau UseRouting
+            app.UseAuthentication(); 
+            app.UseAuthorization();  
 
-            app.MapControllers();    // Thay thế UseEndpoints
+            app.MapControllers();    
         }
 
         private static void RegisterRepositories(IServiceCollection services)
@@ -96,6 +95,7 @@ namespace StempedeAPI
             services.AddScoped<ILabService, LabService>();
             services.AddScoped<ISubcategoryService, SubcategoryService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ISupportRequestService, SupportRequestService>();
         }
     }
 }

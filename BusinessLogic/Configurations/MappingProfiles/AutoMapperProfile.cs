@@ -6,6 +6,7 @@ using BusinessLogic.DTOs.User;
 using BusinessLogic.DTOs.Subcategory;
 using BusinessLogic.DTOs.Order;
 using DataAccess.Entities;
+using BusinessLogic.DTOs.SupportRequest;
 
 namespace BusinessLogic.Configurations.MappingProfiles
 {
@@ -40,8 +41,7 @@ namespace BusinessLogic.Configurations.MappingProfiles
             CreateMap<UpdateLabDto, Lab>();
             CreateMap<Lab, ReadLabSimpleDto>();
 
-            // Subcategory mappings
-            CreateMap<Subcategory, ReadSubcategoryDto>();
+           
             // Order -> OrderDto
             CreateMap<Order, OrderDto>()
                 .ForMember(dest => dest.CustomerUsername,
@@ -65,12 +65,16 @@ namespace BusinessLogic.Configurations.MappingProfiles
                     opt => opt.MapFrom(src => src.ProductDescription))
                 .ForMember(dest => dest.Price,
                     opt => opt.MapFrom(src => src.Price ?? 0m));
-           
-            // CreateSubcategoryDto->Subcategory
+            // Subcategory mappings
             CreateMap<Subcategory, ReadSubcategoryDto>();
-
+            // CreateSubcategoryDto->Subcategory
             CreateMap<CreateSubcategoryDto, Subcategory>()
                 .ForMember(dest => dest.Products, opt => opt.Ignore());
+
+            //support request
+            CreateMap<SupportRequest, SupportRequestDto>()
+                .ForMember(dest => dest.Username,
+                opt => opt.MapFrom(src => src.User.Username));
         }
     }
 }
